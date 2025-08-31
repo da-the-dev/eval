@@ -1,6 +1,6 @@
 import torch
 
-from datasets import Dataset, DatasetDict
+from datasets import Dataset, DatasetDict, load_dataset
 from tqdm import tqdm
 from transformers import Any
 
@@ -8,13 +8,32 @@ from transformers import Any
 def ppl(
     model: Any,
     tokenizer: Any,
-    dataset: Dataset | DatasetDict,
-    max_length=1024,
-    stride=512,
-):
+    dataset: Dataset | DatasetDict | None = None,
+    max_length = 1024,
+    stride = 512,
+) -> float:
+    """
+    Compute perplexity for a given model on a given dataset
+
+    Notes:
+    - Model is put in eval mode. Model's mode is restored after successful run of this function
+    - Default dataset is the test split of 'wikitext-2-raw-v1'
+
+    Args:
+        model (Any): Any HuggingFace model
+        tokenizer (Any): Any HuggingFace tokenizer
+        dataset (Dataset | DatasetDict): Any HuggingFace dataset
+        max_length (int, optional): Sliding window size. Defaults to 1024.
+        stride (int, optional): Sliding window stride. Defaults to 512.
+
+    Returns:
+        float: Perplexity
+    """
+    if not dataset:
+        dataset = load_dataset('wikitext', 'wikitext-2-raw-v1', split='test')
+
     mode = model.training
     model_device = model.device
-    model.training = mode
 
     model.eval()
 
@@ -31,12 +50,8 @@ def ppl(
     total_loss = 0
     total_tokens = 0
     for i in tqdm(range(tokenized_dataset['input_ids'].shape[0])):
-        input_ids_chunk = (
-            tokenized_dataset['input_ids'][i].unsqueeze(0).to(model_device)
-        )
-        attention_mask_chunk = (
-            tokenized_dataset['attention_mask'][i].unsqueeze(0).to(model_device)
-        )
+        input_ids_chunk = tokenized_dataset['input_ids'][i].unsqueeze(0).to(model_device)
+        attention_mask_chunk = tokenized_dataset['attention_mask'][i].unsqueeze(0).to(model_device)
 
         with torch.no_grad():
             outputs = model(
@@ -55,6 +70,8 @@ def ppl(
         total_loss += chunk_total_loss
         total_tokens += num_real_tokens_in_chunk
 
+    model.training = mode
+
     final_average_loss = total_loss / total_tokens
 
-    return torch.exp(final_average_loss)
+    return torch.exp(final_average_loss).item()
