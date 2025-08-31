@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "datasets>=4.0.0",
+    "huggingface-hub>=0.34.4",
     "ipykernel>=6.30.1",
     "ipywidgets>=8.1.7",
     "jupyter>=1.1.1",
@@ -18,3 +19,37 @@ dependencies = [
     "transformers>=4.55.4",
     "trl>=0.21.0",
 ]
+
+[tool.ruff]
+line-length = 120
+exclude = ["notebooks"]
+
+[tool.ruff.format]
+quote-style = "single"
+
+[tool.ruff.lint]
+select = [
+    "E", "I", "F", "W", "C90", "N", "UP", "YTT", "S", "BLE",
+    "B", "C4", "DTZ", "DJ", "FA", "ISC", "ICN", "G", "PIE",
+    "T20", "PYI", "PT", "Q", "RSE", "RET", "SIM", "TID",
+    "TCH", "INT", "PTH", "TD", "ERA", "PL",
+]
+ignore = ["E501", "ISC001"]
+
+[tool.ruff.lint.isort]
+lines-between-types = 1
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**.py" = ["S101"]
+
+[tool.ruff.lint.flake8-pytest-style]
+fixture-parentheses = false
+
+[tool.ruff.lint.flake8-quotes]
+inline-quotes = "single"
+
+[tool.ruff.lint.pylint]
+max-args = 7
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
